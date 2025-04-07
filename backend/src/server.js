@@ -7,7 +7,7 @@ dotenv.config();
 
 const server = http.createServer(app);
 
-connectDBB();
+connectDB();
 
 const PORT = process.env.PORT || 8080;
 
