@@ -40,19 +40,39 @@ export const sendEmail = async (options) => {
     }
 };
 
-export const emailVerificationMailgenContent = (username,  verificationUrl) => {
+export const emailVerificationMailgenContent = (username, verificationUrl) => {
     return {
-        body:{
+        body: {
             name: username,
             intro: "Welcome to CodeSangam! We're very excited to have you on board.",
             action: {
-                instruction: "To verify your email please click on the following button",button:{
+                instruction: "To verify your email please click on the following button", button: {
                     color: "#22BC66",
                     text: "Verify your email",
                     link: verificationUrl,
                 },
             },
             outro: "Need help? Just reply to this email, we'd love to help.",
+        },
+    };
+};
+
+export const forgotPasswordMailgenContent = (username, resetUrl) => {
+    return {
+        body: {
+            name: username,
+            intro: "We got a request to reset the password for our account.",
+            action: {
+                instruction: "To reset your password please click on the following button or link"
+                ,
+                button: {
+                    color: "#22BC66",
+                    text: "Reset your password",
+                    link: resetUrl,
+                },
+            },
+            outro: "Need help? Just reply to this email, we'd love to help.",
+
         },
     };
 };
