@@ -467,3 +467,26 @@ export const assignRole = asyncHandler(async(req, res) => {
             )
         );
 });
+
+export const handleSocialLogin = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user?._id);
+
+    if(!user){
+        throw new ApiError(404, "User does not exist");
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+
+    const options = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+    }
+
+    return res  
+        .status(301)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .redirect(`${process.env.CLIENT_SSO_REDIRECT_URL}?accessToken=${accessToken}&refreshToken=${refreshToken}`
+
+        );
+});

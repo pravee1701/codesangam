@@ -7,6 +7,7 @@ import { rateLimit } from "express-rate-limit";
 import session from "express-session";
 import { errorHandler } from "./middleware/error.middleware.js";
 import { ApiError } from "./utils/ApiError.js";
+import passport from "passport";
 
 dotenv.config();
 
@@ -37,6 +38,19 @@ app.use(cors({
     credentials: true,
 }));
 app.use(cookieParser());
+
+// required for passport
+app.use(
+    session({
+        secret: process.env.EXPRESS_SESSION_SECRET,
+        resave: true,
+        saveUninitialized: true,
+    })
+);
+// session secret
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use(errorHandler);
 
