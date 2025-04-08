@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { AvailableSocialLogins, AvailableUserRoles, USER_TEMPORARY_TOKEN_EXPIRY, UserLoginType, UserRolesEnum } from "../constants";
+import { AvailableSocialLogins, AvailableUserRoles, USER_TEMPORARY_TOKEN_EXPIRY, UserLoginType, UserRolesEnum } from "../constants.js";
 
 const userSchema = new Schema({
     username: {

@@ -6,7 +6,7 @@ import requestIp from "request-ip";
 import { rateLimit } from "express-rate-limit";
 import session from "express-session";
 import { errorHandler } from "./middleware/error.middleware.js";
-import { ApiError } from "./utils/ApiError";
+import { ApiError } from "./utils/ApiError.js";
 
 dotenv.config();
 

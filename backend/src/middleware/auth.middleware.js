@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
@@ -39,3 +39,23 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         );
     }
 });
+
+export const verfiyPermission = (roles = []) => {
+    asyncHandler(async (req, res) => {
+        if(!req.user?._id){
+            throw new ApiError(
+                401,
+                "Unauthorized request"
+            );
+        }
+
+        if(roles.includes(req.user?.role)){
+            next();
+        } else {
+            throw new ApiError(
+                403,
+                "You are not allowed to perform this action"
+            )
+        }
+    });
+}

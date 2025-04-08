@@ -44,7 +44,7 @@ export const userLoginValidator = [
 
 ]
 
-export const userChangePasswordValidator = [
+export const userChangeCurrentPasswordValidator = [
     body("oldPassword")
         .notEmpty()
         .withMessage("Old password is required")

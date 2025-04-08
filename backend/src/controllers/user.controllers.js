@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { UserLoginType, UserRolesEnum } from "../constants.js";
-import { forgotPasswordMailgenContent } from "../utils/mail.js";
+import { emailVerificationMailgenContent, forgotPasswordMailgenContent, sendEmail } from "../utils/mail.js";
 
 export const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -368,6 +368,102 @@ export const getCurrentUser = asyncHandler(async (req, res) =>{
                 200,
                 req.user,
                 "Current user fetched successfully"
+            )
+        );
+});
+
+export const changeCurrentPassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.user?._id);
+
+    const isPasswordValid = await user.isPasswordCorrect(oldPassword);
+
+    if(!isPasswordValid){
+        throw new ApiError(
+            400,
+            "Invalid old password"
+        );
+    }
+
+    user.password = newPassword;
+    await user.save({validateBeforeSave: false});
+
+    return res
+        .status(200)
+        .json(new ApiResponse(
+            200,
+            {},
+            "Password changed successfully"
+        ));
+
+});
+
+export const resendEmailVerification = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user?._id);
+
+    if(!user){
+        throw new ApiError(
+            404, 
+            "User does not exist",
+            []
+        );
+    }
+
+    if(user.isEmailVerified){
+        throw new ApiError(
+            409,
+            "Email is already verified"
+        );
+    }
+
+    const { unHashedToken, hashedToken, tokenExpiry } = user.generateTemporaryToken();
+
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationExpiry = tokenExpiry;
+
+    await user.save({validateBeforeSave: false});
+
+    await sendEmail({
+        email: user?.email,
+        subject: "Please verify your email",
+        mailgenContent: 
+        emailVerificationMailgenContent(
+            user.username,
+            `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`
+        ),
+    });
+
+    return res 
+    .status(200)
+    .json(new ApiResponse(
+        200,
+        {},
+        "Email verification link sent successfully"
+    ));
+});
+
+export const assignRole = asyncHandler(async(req, res) => {
+    const { userId } = req.params;
+    const { role } = req.body;
+    const user = await User.findById(userId);
+
+    if(!user){
+        throw new ApiError(
+            404,
+            "User does not exist"
+        );
+    }
+
+    user.role = role;
+    await user.save({validateBeforeSave: false});
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                {},
+                "Role changed for the user"
             )
         );
 });

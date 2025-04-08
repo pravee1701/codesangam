@@ -1,8 +1,10 @@
 import express from 'express';
-import { userForgotPasswordValidator, userLoginValidator, userRegisterValidator, userResetForgottenPasswordValidator } from '../validators/user.validator';
-import { validate } from '../validators/validate';
-import { forgotPassword, getCurrentUser, loginUser, logoutUser, refreshAccessToken, resetForgotPassword, verifyEmail } from '../controllers/user.controllers';
-import { verifyJWT } from '../middleware/auth.middleware';
+import { userAssignRoleValidator, userChangeCurrentPasswordValidator, userForgotPasswordValidator, userLoginValidator, userRegisterValidator, userResetForgottenPasswordValidator } from '../validators/user.validator.js';
+import { validate } from '../validators/validate.js';
+import { assignRole, changeCurrentPassword, forgotPassword, getCurrentUser, loginUser, logoutUser, refreshAccessToken, resendEmailVerification, resetForgotPassword, verifyEmail } from '../controllers/user.controllers.js';
+import { verfiyPermission, verifyJWT } from '../middleware/auth.middleware.js';
+import { UserRolesEnum } from '../constants.js';
+import { mongoIdPathVariableValidator } from '../common/mongodb.validators.js';
 
 const router = express.Router();
 
@@ -26,3 +28,27 @@ router.route("/reset-password/:resetToken")
 router.route("/logout").post(verifyJWT, logoutUser);
 
 router.route("/current-useer").get(verifyJWT, getCurrentUser);
+
+router.route("/change-password")
+    .post(
+        verifyJWT,
+        userChangeCurrentPasswordValidator,
+        validate,
+        changeCurrentPassword
+    )
+
+router.route("resend-email-verification")
+    .post(
+        verifyJWT,
+        resendEmailVerification
+    );
+
+router.route("/assign-role/:userId")
+    .post(
+        verifyJWT,
+        verfiyPermission([UserRolesEnum.ADMIN]),
+        mongoIdPathVariableValidator,
+        userAssignRoleValidator,
+        validate,
+        assignRole
+    )
