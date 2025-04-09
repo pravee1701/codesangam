@@ -5,9 +5,10 @@ import dotenv from "dotenv";
 import requestIp from "request-ip";
 import { rateLimit } from "express-rate-limit";
 import session from "express-session";
+import passport from "passport";
+import userRoutes from "./routes/user.routes.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 import { ApiError } from "./utils/ApiError.js";
-import passport from "passport";
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use("/api/v1/user", userRoutes)
 app.use(errorHandler);
 
 export default app;

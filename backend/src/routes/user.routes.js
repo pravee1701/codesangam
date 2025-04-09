@@ -3,8 +3,8 @@ import passport from "passport";
 import "../passport/indes.js";
 import { userAssignRoleValidator, userChangeCurrentPasswordValidator, userForgotPasswordValidator, userLoginValidator, userRegisterValidator, userResetForgottenPasswordValidator } from '../validators/user.validator.js';
 import { validate } from '../validators/validate.js';
-import { assignRole, changeCurrentPassword, forgotPassword, getCurrentUser, handleSocialLogin, loginUser, logoutUser, refreshAccessToken, resendEmailVerification, resetForgotPassword, verifyEmail } from '../controllers/user.controllers.js';
-import { verfiyPermission, verifyJWT } from '../middleware/auth.middleware.js';
+import { assignRole, changeCurrentPassword, forgotPassword, getCurrentUser, handleSocialLogin, loginUser, logoutUser, refreshAccessToken, registerUser, resendEmailVerification, resetForgotPassword, verifyEmail } from '../controllers/user.controllers.js';
+import { verifyPermission, verifyJWT } from '../middleware/auth.middleware.js';
 import { UserRolesEnum } from '../constants.js';
 import { mongoIdPathVariableValidator } from '../common/mongodb.validators.js';
 
@@ -45,15 +45,14 @@ router.route("resend-email-verification")
         resendEmailVerification
     );
 
-router.route("/assign-role/:userId")
-    .post(
-        verifyJWT,
-        verfiyPermission([UserRolesEnum.ADMIN]),
-        mongoIdPathVariableValidator,
-        userAssignRoleValidator,
-        validate,
-        assignRole
-    )
+router.route("/assign-role/:userId").post(
+    verifyJWT,
+    verifyPermission([UserRolesEnum.ADMIN]), 
+    mongoIdPathVariableValidator,
+    userAssignRoleValidator,
+    validate,
+    assignRole
+);
 
 // SSO routes
 
@@ -81,3 +80,5 @@ router.route("/google/callback")
 router.route("/github/callback")
     .get(passport.authenticate("github"),
     handleSocialLogin)
+
+export default router;

@@ -1,15 +1,13 @@
 import passport from "passport";
-import dotenv from "dotenv";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as GithubStrategy } from "passport-github2";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { UserLoginType, UserRolesEnum } from "../constants.js";
 
-dotenv.config();
 try {
     passport.serializeUser((user, next) => {
-        next(null, user);
+        next(null, user.id); // Store only the user ID
     });
 
     passport.deserializeUser(async (id, next) => {
@@ -43,7 +41,7 @@ try {
                         next(
                             new ApiError(
                                 400,
-                                "You have previously registered using " + user.loginType?.toLowerCase()?.split("_").join(" ") + ". Please use the " + user.loginType?.toLowerCase()?.split("_").join(" ") + " login option to access your account."
+                                `You have previously registered using ${user.loginType?.toLowerCase()?.split("_").join(" ")}. Please use the ${user.loginType?.toLowerCase()?.split("_").join(" ")} login option to access your account.`
                             ),
                             null
                         );
@@ -53,7 +51,7 @@ try {
                 } else {
                     const createdUser = await User.create({
                         email: profile._json.email,
-                        password: profile._json.sub,
+                        password: "oauth_placeholder", // Use a placeholder
                         username: profile._json.email?.split("@")[0],
                         isEmailVerified: true,
                         role: UserRolesEnum.USER,
@@ -70,11 +68,12 @@ try {
     );
 
     passport.use(
-        new GithubStrategy({
-            clientID: process.env.GITHUB_CLIENT_ID,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET,
-            callbackURL: process.env.GITHUB_CALLBACK_URL,
-        },
+        new GithubStrategy(
+            {
+                clientID: process.env.GITHUB_CLIENT_ID,
+                clientSecret: process.env.GITHUB_CLIENT_SECRET,
+                callbackURL: process.env.GITHUB_CALLBACK_URL,
+            },
             async (_, __, profile, next) => {
                 const user = await User.findOne({ email: profile._json.email });
 
@@ -83,7 +82,7 @@ try {
                         next(
                             new ApiError(
                                 400,
-                                "You have previously registered using " + user.loginType?.toLowerCase()?.split("_").join(" ") + ". Please use the " + user.loginType?.toLowerCase()?.split("_").join(" ") + " login option to access your account."
+                                `You have previously registered using ${user.loginType?.toLowerCase()?.split("_").join(" ")}. Please use the ${user.loginType?.toLowerCase()?.split("_").join(" ")} login option to access your account.`
                             ),
                             null
                         );
@@ -95,11 +94,10 @@ try {
                         next(
                             new ApiError(
                                 400,
-                                "User does not have a public email asscociated with their account . Please try another login method"
+                                "User does not have a public email associated with their account. Please try another login method."
                             ),
                             null
                         );
-
                     } else {
                         const userNameExist = await User.findOne({
                             username: profile?.username,
@@ -107,7 +105,7 @@ try {
 
                         const createdUser = await User.create({
                             email: profile._json.email,
-                            password: profile._json.node_id,
+                            password: "oauth_placeholder", // Use a placeholder
                             username: userNameExist ? profile._json.email?.split("@")[0] : profile?.username,
                             isEmailVerified: true,
                             role: UserRolesEnum.USER,
