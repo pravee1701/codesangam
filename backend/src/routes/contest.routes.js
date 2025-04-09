@@ -11,8 +11,8 @@ const router = express.Router();
 
 router.route("/upcoming").get(getUpcomingContests);
 router.route("/past").get(getPastContests);
-router.route("/:id").get(getContestById);
 router.route("/filter").get(filterContestsByPlatform);
+router.route("/:contestId").get(getContestById);
 
 router.route("/solution").post(
     verifyJWT,

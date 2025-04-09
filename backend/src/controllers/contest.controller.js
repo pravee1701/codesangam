@@ -14,7 +14,7 @@ export const getUpcomingContests = asyncHandler(async (req, res) => {
     }
     const contest = await Contest.find({ status: "upcoming" }).sort({ startTime: 1 });
 
-    await cacheData(cacheKey, contests, 3600);
+    await cacheData(cacheKey, contest, 3600);
 
     res.status(200)
         .json(
@@ -36,12 +36,12 @@ export const getPastContests = asyncHandler(
                 new ApiResponse(200, cachedContests, "Past contest retrieved successfully")
             );
         }
-        const contest = await Contest.find({ status: "past" }).sort({ endTime: -1 });
+        const contests = await Contest.find({ status: "past" }).sort({ endTime: -1 });
 
         await cacheData(cacheKey, contests, 3600);
 
         res.status(200).json(
-            new ApiResponse(200, contest, "Past contest retrieved successfully")
+            new ApiResponse(200, contests, "Past contest retrieved successfully")
         );
     }
 );
@@ -49,7 +49,7 @@ export const getPastContests = asyncHandler(
 export const getContestById = asyncHandler(
     async (req, res) => {
         const { contestId } = req.params;
-        const contest = await Contest.findById(contestId);
+        const contest = await Contest.findById({_id: contestId});
 
         if (!contest) {
             throw new ApiError(404, "Contest not found")
@@ -62,8 +62,7 @@ export const getContestById = asyncHandler(
 )
 
 export const filterContestsByPlatform = asyncHandler(async (req, res) => {
-    const { platforms } = req.params;
-
+    const { platforms } = req.query;
     if (!platforms) {
         throw new ApiError(400, "Platforms query parameter is required")
     }
