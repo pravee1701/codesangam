@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { UserLoginType, UserRolesEnum } from "../constants.js";
 import { emailVerificationMailgenContent, forgotPasswordMailgenContent, sendEmail } from "../utils/mail.js";
 
@@ -65,7 +66,7 @@ export const registerUser = asyncHandler(async (req, res) => {
         mailgenContent:
             emailVerificationMailgenContent(
                 user.username,
-                `${req.protocol}://${req.get("host")}/api/v1/users/verify-email/${unHashedToken}`
+                `${req.protocol}://${req.get("host")}/api/v1/user/verify-email/${unHashedToken}`
             ),
     });
 

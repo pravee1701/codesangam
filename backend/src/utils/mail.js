@@ -12,9 +12,10 @@ export const sendEmail = async (options) => {
             link: "https://codesangam.com",
         },
     });
+    const emailTextual = mailGenerator.generatePlaintext(options.mailgenContent);
 
-    const emailTextual = mailGenerator.generatePlaintext(options.MailgenContent);
-
+  const emailHtml = mailGenerator.generate(options.mailgenContent);
+  
     const transporter = nodemailer.createTransport({
         host: process.env.MAILTRAP_SMTP_HOST,
         port: process.env.MAILTRAP_SMTP_PORT,
@@ -46,7 +47,8 @@ export const emailVerificationMailgenContent = (username, verificationUrl) => {
             name: username,
             intro: "Welcome to CodeSangam! We're very excited to have you on board.",
             action: {
-                instruction: "To verify your email please click on the following button", button: {
+                instruction: "To verify your email please click on the following button", 
+                button: {
                     color: "#22BC66",
                     text: "Verify your email",
                     link: verificationUrl,
