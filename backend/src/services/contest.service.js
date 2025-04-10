@@ -37,7 +37,6 @@ export const fetchContestsFromAPIs = async () => {
                 response = await axios.get(platform.url);
             }
             const contests = parseContests(platform.name, response.data);
-            console.log("====>", contests);
             const bulkOperations = contests.map((contest) => ({
                 updateOne: {
                     filter: { platform: contest.platform, name: contest.name },

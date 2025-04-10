@@ -78,3 +78,23 @@ export const forgotPasswordMailgenContent = (username, resetUrl) => {
         },
     };
 };
+
+export const sendNotificationMailgenContent = (username, upcomingContests) => {
+    return {
+        body: {
+            name: `CodeSangam ${username}`,
+            intro: "Here are the contest scheduled for tomorrow",
+            table: {
+                data: upcomingContests.map((contest) => ({
+                    Name: contest.name,
+                    Platform: contest.platform,
+                    Url: contest.url,
+                    Duration: contest.duration,
+                    StartTime: new Date(contest.startTime).toLocaleString(),
+                    EndTime: new Date(contest.endTime).toLocaleString(),
+                })),
+            },
+            outro: "Good luck with your contest ! Stay tuned for more updates.",
+        }
+    }
+}

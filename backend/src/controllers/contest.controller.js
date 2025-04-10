@@ -13,7 +13,7 @@ export const getUpcomingContests = asyncHandler(async (req, res) => {
         );
     }
     const contest = await Contest.find({ status: "upcoming" }).sort({ startTime: 1 });
-
+    console.log("===>",contest[0])
     await cacheData(cacheKey, contest, 3600);
 
     res.status(200)

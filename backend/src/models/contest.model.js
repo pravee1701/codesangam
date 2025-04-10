@@ -15,11 +15,11 @@ const contestSchema = new Schema(
             type: String,
             required: true,
         },
-        startDate: {
+        startTime: {
             type: Date,
             required: true,
         },
-        endDate: {
+        endTime: {
             type: Date,
             required: true,
         },

@@ -55,6 +55,10 @@ const userSchema = new Schema({
     emailVerificationExpiry: {
         type: Date,
     },
+    isSubscribedToNotification: {
+        type: Boolean,
+        default: true,
+    }
 }, {
     timestamps: true,
 })
