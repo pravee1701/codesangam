@@ -82,7 +82,7 @@ export const forgotPasswordMailgenContent = (username, resetUrl) => {
 export const sendNotificationMailgenContent = (username, upcomingContests) => {
     return {
         body: {
-            name: `CodeSangam ${username}`,
+            name: username,
             intro: "Here are the contest scheduled for tomorrow",
             table: {
                 data: upcomingContests.map((contest) => ({
