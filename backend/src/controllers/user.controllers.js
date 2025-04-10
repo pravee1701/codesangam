@@ -10,7 +10,6 @@ import { emailVerificationMailgenContent, forgotPasswordMailgenContent, sendEmai
 export const generateAccessAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
-
         const accessToken = user.generateAccessToken();
         const refreshToken = user.generateRefreshToken();
 
@@ -102,7 +101,7 @@ export const loginUser = asyncHandler(async (req, res) => {
             { username },
             { email }
         ]
-    })
+    }).select("+password")
 
     if (!user) {
         throw new ApiError(404, "User does not exist");

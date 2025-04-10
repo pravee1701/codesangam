@@ -48,7 +48,7 @@ router.route("resend-email-verification")
 router.route("/assign-role/:userId").post(
     verifyJWT,
     verifyPermission([UserRolesEnum.ADMIN]), 
-    mongoIdPathVariableValidator,
+    mongoIdPathVariableValidator("userId"),
     userAssignRoleValidator,
     validate,
     assignRole

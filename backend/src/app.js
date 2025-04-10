@@ -8,6 +8,7 @@ import session from "express-session";
 import passport from "passport";
 import userRoutes from "./routes/user.routes.js";
 import contestRoutes from "./routes/contest.routes.js";
+import bookmarkRoutes from "./routes/bookmark.routes.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 import { ApiError } from "./utils/ApiError.js";
 
@@ -55,7 +56,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/api/v1/user", userRoutes);
-app.use("/api/v1/contest/",contestRoutes);
+app.use("/api/v1/contest",contestRoutes);
+app.use("/api/v1/bookmark", bookmarkRoutes);
+
 app.use(errorHandler);
 
 export default app;
