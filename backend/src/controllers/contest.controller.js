@@ -1,4 +1,5 @@
 import Contest from "../models/contest.model.js";
+import { updateSolutionLinks } from "../services/contest.service.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -112,3 +113,10 @@ export const addSolutionLink = asyncHandler(
             )
         );
     });
+
+export const updateSolutionLinksManually = asyncHandler(async (req, res) => {
+    await updateSolutionLinks();
+    res.status(200).json(
+        new ApiResponse(200, null, "Solution links updated successfully")
+    );
+});

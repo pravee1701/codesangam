@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { fetchContestsFromAPIs } from "../services/contest.service.js";
+import { fetchContestsFromAPIs, updateSolutionLinks } from "../services/contest.service.js";
 import { sendNotification } from "../services/notification.service.js";
 
 
@@ -18,3 +18,13 @@ cron.schedule("0 9 * * *", async () => {
         console.error("Error sending notifications:", error.message);
     }
 })
+
+cron.schedule("0 0 * * *", async () => {
+    console.log("Running scheduled job to update solution links...");
+    try {
+        await updateSolutionLinks();
+        console.log("Solution links updated successfully.");
+    } catch (error) {
+        console.error("Error updating solution links:", error.message);
+    }
+});

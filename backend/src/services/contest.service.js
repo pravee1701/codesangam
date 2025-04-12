@@ -1,6 +1,8 @@
 import axios from "axios";
 import Contest from "../models/contest.model.js";
 import { deleteCachedData } from "../utils/redisClient.js";
+import { fetchVideosFromPlaylist } from "./youtube.service.js";
+import { PLAYLISTS } from "../constants.js";
 
 export const fetchContestsFromAPIs = async () => {
     const platforms = [
@@ -135,4 +137,57 @@ const parseContests = (platform, data) => {
         });
     }
     return contests;
+};
+
+export const updateSolutionLinks = async () => {
+    try {
+        for (const [platform, playlistId] of Object.entries(PLAYLISTS)) {
+            const videos = await fetchVideosFromPlaylist(playlistId);
+            
+            // Get all contests for this platform at once
+            const allPlatformContests = await Contest.find({ platform });
+            
+            // Create a batch of updates
+            const bulkOps = [];
+            let matchCount = 0;
+            
+            for (const video of videos) {
+                // Find the best matching contest for this video
+                let bestMatch = null;
+                let bestScore = 0;
+                
+                for (const contest of allPlatformContests) {
+                    // Check if video title contains contest name
+                    if (video.title.toLowerCase().includes(contest.name.toLowerCase())) {
+                        // Use the length of the contest name as a score to prefer longer/more specific matches
+                        const score = contest.name.length;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMatch = contest;
+                        }
+                    }
+                }
+                
+                if (bestMatch) {
+                    // Add to bulk operation
+                    bulkOps.push({
+                        updateOne: {
+                            filter: { _id: bestMatch._id },
+                            update: { $set: { solutionVideoId: video.url } }
+                        }
+                    });
+                    matchCount++;
+                }
+            }
+            
+            // Execute bulk operation if there are matches
+            if (bulkOps.length > 0) {
+                const result = await Contest.bulkWrite(bulkOps);
+            } 
+            
+        }
+        console.log("Solution links update complete!");
+    } catch (error) {
+        console.error("Error updating solution links:", error);
+    }
 };

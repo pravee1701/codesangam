@@ -3,7 +3,7 @@ import { verifyJWT, verifyPermission } from "../middleware/auth.middleware.js";
 import { UserRolesEnum } from "../constants.js";
 import { validate } from "../validators/validate.js";
 import { validateSolutionLink } from "../validators/contest.validator.js";
-import { addSolutionLink, filterContestsByPlatform, getContestById, getPastContests, getUpcomingContests } from "../controllers/contest.controller.js";
+import { addSolutionLink, filterContestsByPlatform, getContestById, getPastContests, getUpcomingContests, updateSolutionLinksManually } from "../controllers/contest.controller.js";
 
 
 
@@ -20,6 +20,12 @@ router.route("/solution").post(
     validateSolutionLink,
     validate,
     addSolutionLink
+)
+
+router.route("/update-solution-links").post(
+    verifyJWT,
+    verifyPermission([UserRolesEnum.ADMIN]),
+    updateSolutionLinksManually
 )
 
 export default router;

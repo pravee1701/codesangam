@@ -5,6 +5,12 @@ export const UserRolesEnum = {
     ADMIN: "ADMIN",
 }
 
+export const PLAYLISTS = {
+    LeetCode: "PLcXpkI9A-RZI6FhydNz3JBt_-p_i25Cbr",
+    Codeforces: "PLcXpkI9A-RZLUfBSNp-YQBCOezZKbDSgB",
+    CodeChef: "PLcXpkI9A-RZIZ6lsE0KCcLWeKNoG45fYr",
+};
+
 export const AvailableUserRoles = Object.values(UserRolesEnum);
 
 export const UserLoginType = {
