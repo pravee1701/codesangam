@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import aggregatePaginate from 'mongoose-aggregate-paginate-v2';
 
 const contestSchema = new Schema(
     {
@@ -31,6 +32,7 @@ const contestSchema = new Schema(
             type: String,
             enum: ["upcoming", "ongoing", "past"],
             required: true,
+            index: true
         },
         solutionVideoId: {
             type: String,
@@ -41,5 +43,9 @@ const contestSchema = new Schema(
         timestamps: true
     }
 )
+
+contestSchema.plugin(aggregatePaginate);
+
+contestSchema.index({ startTime: 1 });
 
 export default mongoose.model("Contest", contestSchema)
