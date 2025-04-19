@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { fetchContestsFromAPIs, updateSolutionLinks } from "../services/contest.service.js";
 import { sendNotification } from "../services/notification.service.js";
+import contestModel from "../models/contest.model.js";
 
 
 cron.schedule("0 */6 * * *", async () => {
@@ -28,3 +29,17 @@ cron.schedule("0 0 * * *", async () => {
         console.error("Error updating solution links:", error.message);
     }
 });
+
+cron.schedule('0 * * * *', async () => {
+    try {
+      const now = new Date();
+      await contestModel.updateMany(
+        { endTime: { $lt: now }, status: 'upcoming' },
+        { $set: { status: 'past' } }
+      );
+  
+      console.log('Checked and updated store statuses:', now.toISOString());
+    } catch (error) {
+      console.error('Error updating store statuses:', error);
+    }
+  });

@@ -20,10 +20,7 @@ export const userRegisterValidator = [
         .withMessage("Password is required")
         .isLength({ min: 6 })
         .withMessage("Password should be at least 6 characters long"),
-    body("role")
-        .optional()
-        .isIn(AvailableUserRoles)
-        .withMessage("Invalid user role"),
+   
 ]
 
 export const userLoginValidator = [

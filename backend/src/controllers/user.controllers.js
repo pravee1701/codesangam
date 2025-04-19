@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { UserLoginType, UserRolesEnum } from "../constants.js";
 import { emailVerificationMailgenContent, forgotPasswordMailgenContent, sendEmail } from "../utils/mail.js";
+import { log } from "console";
 
 export const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -67,7 +68,7 @@ export const registerUser = asyncHandler(async (req, res) => {
                 user.username,
                 `${req.protocol}://${req.get("host")}/api/v1/user/verify-email/${unHashedToken}`
             ),
-    });
+    });   
 
     const createdUser = await User.findById(user._id).select("-password -refreshToken -emailVerificationToken -emailVerificationExpiry"
     );
@@ -374,8 +375,8 @@ export const getCurrentUser = asyncHandler(async (req, res) =>{
 
 export const changeCurrentPassword = asyncHandler(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
-
-    const user = await User.findById(req.user?._id);
+        
+    const user = await User.findById(req.user?._id).select("+password");
 
     const isPasswordValid = await user.isPasswordCorrect(oldPassword);
 
