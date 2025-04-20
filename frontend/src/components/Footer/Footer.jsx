@@ -1,9 +1,48 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Github, Twitter, Linkedin, Mail, Heart } from "lucide-react";
+import ApiRequest from "../../services/ApiRequest";
+import { useSelector } from "react-redux";
+import { NOTIFICATION_BASE_URL } from "../../constants";
 
 function Footer() {
+  const authStatus = useSelector((state) => state.auth.isLoggedIn)
+  const userData = useSelector((state) => state.auth.userData)
   const currentYear = new Date().getFullYear();
+  const [isSubscribed, setIsSubscribed] = useState(userData?.isSubscribedToNotification || false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const handleSubscriptionToggle = async () => {
+    if (!authStatus) {
+      alert('Please log in to subscribe to notifications');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      let apiRequest = ''
+      if(isSubscribed){
+
+        apiRequest = new ApiRequest(`${NOTIFICATION_BASE_URL}/unsubscribe`)
+      } else {
+        apiRequest = new ApiRequest(`${NOTIFICATION_BASE_URL}/subscribe`)
+
+      }
+      const response = await apiRequest.postRequest()
+      
+      
+      if (response.success) {
+        setIsSubscribed(response?.data?.isSubscribedToNotification);
+      } else {
+        console.error('Failed to toggle subscription');
+      }
+    } catch (error) {
+      console.error('Failed to toggle subscription:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   // Footer navigation categories
   const footerLinks = [
@@ -108,16 +147,20 @@ function Footer() {
               <p className="text-gray-400 text-sm">Get notifications about new contests and features</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-0">
-              <input
-                type="email"
-                placeholder="Your email address"
-                className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-l-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
               <button
                 type="button"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-r-md transition-colors sm:w-auto"
+                onClick={handleSubscriptionToggle}
+                disabled={isLoading}
+                className={`
+                  font-medium py-2 px-4 rounded-md transition-colors sm:w-auto
+                  ${isLoading ? 'bg-gray-500 cursor-not-allowed' : 
+                    isSubscribed ? 
+                    'bg-gray-600 hover:bg-gray-700 text-white' : 
+                    'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  }
+                `}
               >
-                Subscribe
+                {isLoading ? 'Processing...' : (isSubscribed ? 'Unsubscribe' : 'Subscribe')}
               </button>
             </div>
           </div>
