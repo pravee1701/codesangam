@@ -31,7 +31,6 @@ export const Login = () => {
                 console.log("Login successful", response);
 
                 dispatch(loginUser(response.data));
-                dispatch(updateLogInCheckDone(true))
             navigate("/");
             } else {
                 setError(response.message || 'Invalid email or password');
@@ -45,11 +44,11 @@ export const Login = () => {
     };
 
     const handleGoogleLogin = () => {
-        window.location.href = `${USER_BASE_URL}/auth/google`;
+        window.location.href = `${import.meta.env.VITE_GOOGLE_LOGIN_REDIRECT_URL}`;
     };
 
     const handleGithubLogin = () => {
-        window.location.href = `${USER_BASE_URL}/auth/github`;
+        window.location.href = `${import.meta.env.VITE_GITHUB_LOGIN_REDIRECT_URL}`;
     };
 
     return (

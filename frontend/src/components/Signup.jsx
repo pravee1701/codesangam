@@ -35,11 +35,11 @@ export const Signup = () => {
     };
 
     const handleGoogleLogin = () => {
-        window.location.href = `${import.meta.env.GOOGLE_LOGIN_REDIRECT_URL}`;
+        window.location.href = `${import.meta.env.VITE_GOOGLE_LOGIN_REDIRECT_URL}`;
     };
 
     const handleGithubLogin = () => {
-        window.location.href = `${USER_BASE_URL}/github`;
+        window.location.href = `${import.meta.env.VITE_GITHUB_LOGIN_REDIRECT_URL}`;
     };
 
     return (
