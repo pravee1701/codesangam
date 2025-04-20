@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import ContestTable from '../components/ContestTable';
 import { SearchIcon, FilterIcon, RefreshIcon, Calendar, ChevronLeftIcon, ChevronRightIcon } from '../components/Icons';
 import ApiRequest from '../services/ApiRequest';
-import { CONTEST_BASE_URL } from '../constants';
+import { CONTEST_BASE_URL, USER_BASE_URL } from '../constants';
+import { useSelector } from 'react-redux';
 
 const PastContestsPage = () => {
   const [contests, setContests] = useState([]);
@@ -11,12 +12,15 @@ const PastContestsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [platformFilter, setPlatformFilter] = useState('all');
   const [dateRange, setDateRange] = useState('30'); // Default to last 30 days
+  const [userRole, setUserRole] = useState('USER'); // Default to regular user
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const [hasPrevPage, setHasPrevPage] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
+
+  const userData = useSelector((state) => state.auth.userData);
   
   const platforms = [
     { id: 'all', name: 'All Platforms' },
@@ -33,15 +37,38 @@ const PastContestsPage = () => {
     { value: 'all', label: 'All time' }
   ];
 
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {        
+        if (userData && userData.role) {
+          setUserRole(userData.role);
+          return;
+        }
+        
+        // Fallback to API request if not in Redux state
+        const apiRequest = new ApiRequest(`${USER_BASE_URL}/current-user`);
+        const response = await apiRequest.getRequest();
+        
+        if (response.success && response.data && response.data.role) {
+          setUserRole(response.data.role);
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    };
+    
+    fetchUserRole();
+  }, []);
+
   const fetchContests = async (page = currentPage) => {
     setLoading(true);
 
     try {
-      const apiRequest = new ApiRequest(`${CONTEST_BASE_URL}/past?page=${page}&days=${dateRange}&platform=${platformFilter}`)
-      const response = await apiRequest.getRequest()
+      const apiRequest = new ApiRequest(`${CONTEST_BASE_URL}/past?page=${page}`);
+      const response = await apiRequest.getRequest();
       
       if(!response.success){
-        throw new Error("Failed to fetch contests")
+        throw new Error("Failed to fetch contests");
       }
       
       setContests(response.data.contests);
@@ -69,6 +96,13 @@ const PastContestsPage = () => {
     if (newPage >= 1 && (newPage <= totalPages || hasNextPage)) {
       fetchContests(newPage);
       window.scrollTo(0, 0); // Scroll to top when page changes
+    }
+  };
+
+  // Handle contest update - this will be passed to ContestTable to update contests when a solution is added
+  const handleContestUpdated = (updatedContests) => {
+    if (Array.isArray(updatedContests)) {
+      setContests(updatedContests);
     }
   };
 
@@ -117,6 +151,10 @@ const PastContestsPage = () => {
     return pages;
   };
 
+  // Check if user is admin
+  const isAdmin = userRole === 'ADMIN';
+  
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
@@ -143,6 +181,13 @@ const PastContestsPage = () => {
           </div>
 
           <div className="flex flex-wrap gap-3">
+            {/* Admin Badge - only shown for admins */}
+            {isAdmin && (
+              <div className="bg-purple-900 text-purple-100 px-3 py-2 rounded-md flex items-center">
+                <span className="text-xs font-medium">Admin Mode</span>
+              </div>
+            )}
+
             {/* Date Range Filter */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -209,7 +254,12 @@ const PastContestsPage = () => {
         ) : (
           <>
             {filteredContests.length > 0 ? (
-              <ContestTable contests={filteredContests} type="past" />
+              <ContestTable 
+                contests={filteredContests} 
+                type="past" 
+                isAdmin={isAdmin}
+                onContestUpdated={handleContestUpdated}
+              />
             ) : (
               <div className="text-center py-16 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700">
                 <div className="mx-auto h-16 w-16 text-gray-600 mb-4">

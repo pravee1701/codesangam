@@ -29,7 +29,7 @@ export const Login = () => {
 
             if (response.success) {
                 console.log("Login successful", response);
-                // Assuming the response contains a token or user data
+
                 dispatch(loginUser(response.data));
                 dispatch(updateLogInCheckDone(true))
             navigate("/");

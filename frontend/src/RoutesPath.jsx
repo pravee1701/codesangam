@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage'
 import ForLoggedInUsers from './protectedRoutes/ForLoggedInUsers'
 import HomePage from './pages/HomePage'
 import BookmarkPage from './pages/BookmarkPage'
+import UserManagement from './pages/UserMangementPage'
 
 
 const RoutePaths = () => {
@@ -26,6 +27,7 @@ const RoutePaths = () => {
                         <Route path='change-password' element={<ChangePassword />} />
                         <Route path='upcoming-contest' element={<UpcomingContestsPage />} />
                         <Route path='bookmarks' element={<BookmarkPage />} />
+                        <Route path='getAllUser' element={<UserManagement />} />
                         <Route path='past-contest' element={<PastContestsPage />} />
                         <Route path='current-user' element={<ProfilePage />} />
                     </Route>

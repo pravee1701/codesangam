@@ -1,21 +1,41 @@
-import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useCallback, useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import Logo from "../Logo";
 import NavList from "./NavList";
 import MobileNav from "./MobileNav";
 import { Menu, X } from "../Icons";
 import { HomeIcon, LogIn, UserPlus, User, Calendar, Trophy, BookmarkIcon } from "../Icons";
+import ApiRequest from "../../services/ApiRequest";
+import { USER_BASE_URL } from "../../constants";
+import { loginUser, logoutUser, updateLogInCheckDone } from "../../store/AuthSlice";
+import ApiError from "../../services/ApiError";
 
 const Header = ({ onProfileClick }) => {
   const authStatus = useSelector((state) => state.auth.isLoggedIn);
+  const userData = useSelector((state) => state.auth.userData)
+  
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const dispatch = useDispatch()
 
   const navItems = [
     { name: "Home", path: "/", active: true, icon: <HomeIcon /> },
-    { name: "Login", path: "/login", active: !authStatus, icon: <LogIn /> },
     { name: "SignUp", path: "/signup", active: !authStatus, icon: <UserPlus /> },
+    { name: "Login", path: "/login", active: !authStatus, icon: <LogIn /> },
     { name: "Past Contest", path: "/past-contest", active: authStatus, icon: <Trophy className="w-4 h-4" /> },
     { name: "Upcoming Contest", path: "/upcoming-contest", active: authStatus, icon: <Calendar className="w-4 h-4" /> },
+    {
+      name: "Bookmarks",
+      path: "/bookmarks",
+      active: authStatus,
+      icon: <BookmarkIcon className="w-4 h-4" />,
+    },
+    {
+      name: "Users",
+      path: "/getAllUser",
+      active: authStatus && userData.role === 'ADMIN',
+      icon: <UserPlus className="w-4 h-4" />
+    },
     { 
       name: "Profile", 
       path: "/current-user",
@@ -23,12 +43,6 @@ const Header = ({ onProfileClick }) => {
       icon: <User className="w-4 h-4" />,
       customOnClick: onProfileClick 
     },
-    {
-      name: "Bookmarks",
-      path: "/bookmarks",
-      active: authStatus,
-      icon: <BookmarkIcon className="w-4 h-4" />,
-    }
   ];
 
   // Filter items based on auth status
@@ -39,6 +53,23 @@ const Header = ({ onProfileClick }) => {
   const handleMobileItemClick = () => {
     setMenuOpen(false);
   };
+  const fetchUser = useCallback(async () => {
+    const apiRequest = new ApiRequest(`${USER_BASE_URL}/current-user`);
+    const response = await apiRequest.getRequest();
+
+
+    if (!(response instanceof ApiError)) {
+      dispatch(loginUser(response.data));
+    } else {
+      dispatch(logoutUser());
+    }
+
+    dispatch(updateLogInCheckDone(true));
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
 
   return (
     <header className="w-full bg-gray-900 border-b border-gray-800 shadow-lg">
