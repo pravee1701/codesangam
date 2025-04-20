@@ -3,7 +3,7 @@ import passport from "passport";
 import "../passport/indes.js";
 import { userAssignRoleValidator, userChangeCurrentPasswordValidator, userForgotPasswordValidator, userLoginValidator, userRegisterValidator, userResetForgottenPasswordValidator } from '../validators/user.validator.js';
 import { validate } from '../validators/validate.js';
-import { assignRole, changeCurrentPassword, forgotPassword, getCurrentUser, handleSocialLogin, loginUser, logoutUser, refreshAccessToken, registerUser, resendEmailVerification, resetForgotPassword, verifyEmail } from '../controllers/user.controllers.js';
+import { assignRole, changeCurrentPassword, forgotPassword, getAllUsers, getCurrentUser, handleSocialLogin, loginUser, logoutUser, refreshAccessToken, registerUser, resendEmailVerification, resetForgotPassword, verifyEmail } from '../controllers/user.controllers.js';
 import { verifyPermission, verifyJWT } from '../middleware/auth.middleware.js';
 import { UserRolesEnum } from '../constants.js';
 import { mongoIdPathVariableValidator } from '../common/mongodb.validators.js';
@@ -44,6 +44,12 @@ router.route("resend-email-verification")
         verifyJWT,
         resendEmailVerification
     );
+
+router.route("/getAllUsers").get(
+    verifyJWT,
+    verifyPermission([UserRolesEnum.ADMIN]),
+    getAllUsers
+)
 
 router.route("/assign-role/:userId").post(
     verifyJWT,
