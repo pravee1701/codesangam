@@ -127,7 +127,6 @@ export const getBookmarksForUser = asyncHandler(async (req, res) => {
 
 export const deleteBookmark = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    console.log("==>",id);
     
     const bookmark = await Bookmark.findOne({
         _id: id,

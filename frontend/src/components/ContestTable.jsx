@@ -1,10 +1,109 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, BookmarkIcon, BookmarkFilledIcon, LinkIcon, CodeIcon, ClockIcon, AlarmIcon, TimerIcon, YoutubeIcon, DeleteIcon, EditIcon } from './Icons';
 import ApiRequest from "../services/ApiRequest";
 import { BOOKMARK_BASE_URL, CONTEST_BASE_URL } from '../constants';
 import SolutionPage from '../pages/SolutionPage';
 
+// Utility functions moved outside the component to prevent re-creation
+const formatDuration = (minutes) => {
+  if (!minutes && minutes !== 0) return "N/A";
+  
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours > 0 ? `${hours}h ` : ''}${mins > 0 ? `${mins}m` : hours > 0 ? '' : '0m'}`;
+};
+
+const formatTime = (timestamp) => {
+  if (!timestamp) return "Not specified";
+  
+  try {
+    const date = new Date(timestamp);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return "Invalid date";
+    }
+    
+    return date.toLocaleString(undefined, { 
+      weekday: 'short',
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit', 
+      minute: '2-digit'
+    });
+  } catch (error) {
+    console.error("Error formatting time:", error);
+    return "Invalid date";
+  }
+};
+
+const calculateTimeRemaining = (startTime) => {
+  if (!startTime) return "N/A";
+  
+  try {
+    const now = new Date();
+    const start = new Date(startTime);
+    
+    // Check if date is valid
+    if (isNaN(start.getTime())) {
+      return "Invalid date";
+    }
+    
+    const diffMs = start - now;
+    
+    if (diffMs <= 0) return "Started";
+    
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else {
+      return `${minutes}m`;
+    }
+  } catch (error) {
+    console.error("Error calculating time remaining:", error);
+    return "Invalid date";
+  }
+};
+
+const getPlatformColor = (platform) => {
+  if (!platform) return 'text-gray-400';
+  
+  const platformColors = {
+    'Codeforces': 'text-blue-400',
+    'LeetCode': 'text-yellow-400',
+    'CodeChef': 'text-orange-400',
+  };
+  
+  return platformColors[platform] || 'text-blue-400';
+};
+
+const getRowColorClass = (contest, type) => {
+  if (type !== "upcoming" || !contest || !contest.startTime) return "";
+  
+  try {
+    const now = new Date();
+    const start = new Date(contest.startTime);
+    
+    // Check if date is valid
+    if (isNaN(start.getTime())) {
+      return "";
+    }
+    
+    const diffHours = (start - now) / (1000 * 60 * 60);
+    
+    if (diffHours < 1) return "border-l-4 border-red-500 bg-red-900 bg-opacity-20";
+    if (diffHours < 24) return "border-l-4 border-yellow-500 bg-yellow-900 bg-opacity-10";
+    return "";
+  } catch (error) {
+    return "";
+  }
+};
 
 const ContestTable = ({
   contests = [],
@@ -16,19 +115,95 @@ const ContestTable = ({
   isAdmin = false,
   onContestUpdated
 }) => {
+  
   const [bookmarkedContests, setBookmarkedContests] = useState(new Set());
   const [remainingTimes, setRemainingTimes] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedContest, setSelectedContest] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const contestsPerPage = 10; 
-
-  // Calculate pagination values
+  
+  // Refs
+  const timeIntervalRef = useRef(null);
+  
+  // Process contests only once when they change
+  const contestsRef = useRef(contests);
+  
+  // Calculate pagination data
+  const totalPages = Math.ceil((contests?.length || 0) / contestsPerPage);
   const indexOfLastContest = currentPage * contestsPerPage;
   const indexOfFirstContest = indexOfLastContest - contestsPerPage;
-  const currentContests = Array.isArray(contests) ? 
-    contests.slice(indexOfFirstContest, indexOfLastContest) : [];
-  const totalPages = Math.ceil((contests?.length || 0) / contestsPerPage);
+  
+  // Calculate current contests (do not derive from state to avoid loops)
+  const currentContests = React.useMemo(() => {
+    return Array.isArray(contests) ? 
+      contests.slice(indexOfFirstContest, indexOfLastContest) : [];
+  }, [contests, indexOfFirstContest, indexOfLastContest]);
+    
+  // Update remaining times only when contests change or page changes
+  useEffect(() => {
+    // Skip effect if not for upcoming contests
+    if (type !== "upcoming") return;
+    
+    // Save contests to ref to check for changes
+    contestsRef.current = contests;
+    
+    // Initial update without using state setter
+    const initialTimes = {};
+    if (Array.isArray(currentContests)) {
+      currentContests.forEach(contest => {
+        if (contest && contest._id) {
+          initialTimes[contest._id] = calculateTimeRemaining(contest.startTime);
+        }
+      });
+      // Update state only once with all calculated times
+      setRemainingTimes(initialTimes);
+    }
+    
+    // Set up interval for updates
+    const updateTimesInterval = () => {
+      // Check if contests have changed
+      if (contestsRef.current !== contests) return;
+      
+      const newTimes = {};
+      let hasChanged = false;
+      
+      if (Array.isArray(currentContests)) {
+        currentContests.forEach(contest => {
+          if (contest && contest._id) {
+            const newTime = calculateTimeRemaining(contest.startTime);
+            newTimes[contest._id] = newTime;
+            
+            // Only mark as changed if the time actually changed
+            if (newTime !== remainingTimes[contest._id]) {
+              hasChanged = true;
+            }
+          }
+        });
+      }
+      
+      // Only update state if there were actual changes
+      if (hasChanged) {
+        setRemainingTimes(newTimes);
+      }
+    };
+    
+    // Clear any existing interval
+    if (timeIntervalRef.current) {
+      clearInterval(timeIntervalRef.current);
+    }
+    
+    // Set new interval - update every minute
+    timeIntervalRef.current = setInterval(updateTimesInterval, 60000);
+    
+    // Clean up on unmount or when dependencies change
+    return () => {
+      if (timeIntervalRef.current) {
+        clearInterval(timeIntervalRef.current);
+        timeIntervalRef.current = null;
+      }
+    };
+  }, [currentContests, type, contests]); // Include contests in dependency array to reset on new contests
 
   // Function to handle solution update
   const handleUpdateSolution = async (contestId, solutionLink) => {
@@ -36,7 +211,6 @@ const ContestTable = ({
       // Extract YouTube ID if full URL is provided
       const url = new URL(solutionLink);
       
-
       // Make API request to update the solution
       const apiRequest = new ApiRequest(`${CONTEST_BASE_URL}/solution`);
       const response = await apiRequest.postRequest({ solutionLink: url, contestId: contestId });
@@ -45,16 +219,16 @@ const ContestTable = ({
         throw new Error(response.message || "Failed to update solution");
       }
 
-      // Update the contest in the local state
-      const updatedContests = contests.map(contest => {
-        if (contest._id === contestId) {
-          return { ...contest, solutionVideoId: url };
-        }
-        return contest;
-      });
-
       // This assumes you have a way to update the contests array in the parent component
       if (onContestUpdated) {
+        // Update the contest in the parent component
+        const updatedContests = contests.map(contest => {
+          if (contest._id === contestId) {
+            return { ...contest, solutionVideoId: url };
+          }
+          return contest;
+        });
+        
         onContestUpdated(updatedContests);
       }
       
@@ -65,7 +239,7 @@ const ContestTable = ({
     }
   };
 
-  // Open the solution edit modal - improved to make it more visible
+  // Open the solution edit modal
   const openSolutionModal = (contest, e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -137,132 +311,6 @@ const ContestTable = ({
     }
   };
 
-  // Format duration from minutes to "2h 30m" format
-  const formatDuration = (minutes) => {
-    if (!minutes && minutes !== 0) return "N/A";
-    
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours > 0 ? `${hours}h ` : ''}${mins > 0 ? `${mins}m` : hours > 0 ? '' : '0m'}`;
-  };
-
-  // Format time to local time string with day
-  const formatTime = (timestamp) => {
-    if (!timestamp) return "Not specified";
-    
-    try {
-      const date = new Date(timestamp);
-      
-      // Check if date is valid
-      if (isNaN(date.getTime())) {
-        return "Invalid date";
-      }
-      
-      return date.toLocaleString(undefined, { 
-        weekday: 'short',
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit', 
-        minute: '2-digit'
-      });
-    } catch (error) {
-      console.error("Error formatting time:", error);
-      return "Invalid date";
-    }
-  };
-
-  // Calculate and format time remaining until contest start
-  const calculateTimeRemaining = (startTime) => {
-    if (!startTime) return "N/A";
-    
-    try {
-      const now = new Date();
-      const start = new Date(startTime);
-      
-      // Check if date is valid
-      if (isNaN(start.getTime())) {
-        return "Invalid date";
-      }
-      
-      const diffMs = start - now;
-      
-      if (diffMs <= 0) return "Started";
-      
-      const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      
-      if (days > 0) {
-        return `${days}d ${hours}h`;
-      } else if (hours > 0) {
-        return `${hours}h ${minutes}m`;
-      } else {
-        return `${minutes}m`;
-      }
-    } catch (error) {
-      console.error("Error calculating time remaining:", error);
-      return "Invalid date";
-    }
-  };
-
-  // Update remaining times every minute
-  useEffect(() => {
-    if (type !== "upcoming") return;
-
-    const calculateAllRemainingTimes = () => {
-      const times = {};
-      currentContests.forEach(contest => {
-        if (contest && contest._id) {
-          times[contest._id] = calculateTimeRemaining(contest.startTime);
-        }
-      });
-      setRemainingTimes(times);
-    };
-
-    // Initial calculation
-    calculateAllRemainingTimes();
-    
-    // Set up interval
-    const interval = setInterval(calculateAllRemainingTimes, 60000);
-    
-    return () => clearInterval(interval);
-  }, [currentContests, type]);
-
-  // Determine row color based on time remaining (for upcoming contests)
-  const getRowColorClass = (contest) => {
-    if (type !== "upcoming" || !contest || !contest.startTime) return "";
-    
-    try {
-      const now = new Date();
-      const start = new Date(contest.startTime);
-      
-      // Check if date is valid
-      if (isNaN(start.getTime())) {
-        return "";
-      }
-      
-      const diffHours = (start - now) / (1000 * 60 * 60);
-      
-      if (diffHours < 1) return "border-l-4 border-red-500 bg-red-900 bg-opacity-20";
-      if (diffHours < 24) return "border-l-4 border-yellow-500 bg-yellow-900 bg-opacity-10";
-      return "";
-    } catch (error) {
-      return "";
-    }
-  };
-
-  const getPlatformColor = (platform) => {
-    if (!platform) return 'text-gray-400';
-    
-    const platformColors = {
-      'Codeforces': 'text-blue-400',
-      'LeetCode': 'text-yellow-400',
-      'CodeChef': 'text-orange-400',
-    };
-    
-    return platformColors[platform] || 'text-blue-400';
-  };
-
   // Pagination controls
   const goToPage = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -320,7 +368,7 @@ const ContestTable = ({
                     className={`
                       border-b border-gray-700 hover:bg-gray-800 hover:bg-opacity-50 transition-all
                       ${index % 2 === 0 ? 'bg-gray-800 bg-opacity-40' : 'bg-gray-800 bg-opacity-20'}
-                      ${getRowColorClass(contest)}
+                      ${getRowColorClass(contest, type)}
                     `}
                   >
                     <td className="py-4 px-4 text-white">
@@ -396,7 +444,7 @@ const ContestTable = ({
                         {/* Register button - only show if not on bookmark page */}
                         {type === "upcoming" && !isBookmarkPage && (
                           <Link
-                            to={`/register/${contest._id}`}
+                            to={`${contest.url}`}
                             className="text-blue-400 hover:text-blue-300 transition-colors flex items-center p-2 text-sm bg-blue-900 bg-opacity-30 rounded-md hover:bg-opacity-50"
                           >
                             <AlarmIcon className="w-4 h-4 mr-1" />
@@ -423,7 +471,7 @@ const ContestTable = ({
                               </span>
                             )}
                             
-                            {/* Add solution button - improved visual styling */}
+                            {/* Add solution button */}
                             {isAdmin && (
                               <button
                                 onClick={(e) => openSolutionModal(contest, e)}
@@ -456,7 +504,7 @@ const ContestTable = ({
         </table>
       </div>
       
-      {/* Pagination controls - Added to make navigation easier */}
+      {/* Pagination controls */}
       {totalPages > 1 && (
         <div className="bg-gray-800 py-3 px-4 border-t border-gray-700 flex justify-between items-center">
           <div className="text-gray-400 text-sm">
@@ -492,7 +540,7 @@ const ContestTable = ({
         </div>
       )}
       
-      {/* Solution Update Modal - Improved positioning */}
+      {/* Solution Update Modal */}
       {modalOpen && selectedContest && (
         <SolutionPage 
           isOpen={modalOpen}
